@@ -3,7 +3,6 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
-
 const port = process.env.PORT || 3000;
 
 app.use(cors());
@@ -11,7 +10,6 @@ app.use(express.json());
 
 const userName = process.env.USER_NAME;
 const key = process.env.SECRET_KEY;
-
 const uri = `mongodb+srv://${userName}:${key}@cluster0.umjlkxj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
@@ -25,11 +23,10 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-
     const database = client.db("organic_food");
     const foodCollection = database.collection("foods");
 
-    // product routes
+    // ===== product routes ===== //
     // get all foods
     app.get("/foods", async (req, res) => {
       try {
@@ -40,11 +37,11 @@ async function run() {
         res.status(500).json({ error: "Internal Server Error" });
       }
     });
+
     // get single food
     app.get("/foods/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        console.log(id);
         const food = await foodCollection.findOne({ _id: new ObjectId(id) });
         res.send(food);
       } catch (error) {
@@ -83,6 +80,7 @@ async function run() {
       const result = await foodCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
+    // ===== end product routes ===== //
   } finally {
     // await client.close();
   }
