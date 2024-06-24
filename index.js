@@ -92,6 +92,7 @@ app.delete("/food/:id", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 // user routes
 app.get("/users", async (req, res) => {
   try {
