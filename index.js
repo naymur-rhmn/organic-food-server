@@ -14,6 +14,7 @@ const uri = `mongodb+srv://${userName}:${key}@cluster0.umjlkxj.mongodb.net/?retr
 
 let client;
 let foodCollection;
+let userCollection;
 
 async function connectToMongoDB() {
   if (!client) {
@@ -26,14 +27,15 @@ async function connectToMongoDB() {
       },
     });
     await client.connect();
-    const database = client.db("organic_food");
-    foodCollection = database.collection("foods");
+    const productDb = client.db("organic_food");
+    const userDb = client.db("userDB");
+    foodCollection = productDb.collection("foods");
+    userCollection = userDb.collection("users");
   }
 }
-
+// product routes
 app.get("/foods", async (req, res) => {
   try {
-    await connectToMongoDB();
     const foods = await foodCollection.find().toArray();
     res.send(foods);
   } catch (error) {
@@ -44,7 +46,6 @@ app.get("/foods", async (req, res) => {
 
 app.get("/foods/:id", async (req, res) => {
   try {
-    await connectToMongoDB();
     const id = req.params.id;
     const food = await foodCollection.findOne({ _id: new ObjectId(id) });
     res.send(food);
@@ -56,7 +57,6 @@ app.get("/foods/:id", async (req, res) => {
 
 app.post("/food", async (req, res) => {
   try {
-    await connectToMongoDB();
     const data = req.body;
     const result = await foodCollection.insertOne(data);
     res.send(result);
@@ -68,7 +68,6 @@ app.post("/food", async (req, res) => {
 
 app.patch("/food/update/:id", async (req, res) => {
   try {
-    await connectToMongoDB();
     const id = req.params.id;
     const data = req.body;
     const result = await foodCollection.updateOne(
@@ -85,7 +84,6 @@ app.patch("/food/update/:id", async (req, res) => {
 
 app.delete("/food/:id", async (req, res) => {
   try {
-    await connectToMongoDB();
     const id = req.params.id;
     const result = await foodCollection.deleteOne({ _id: new ObjectId(id) });
     res.send(result);
@@ -94,11 +92,51 @@ app.delete("/food/:id", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+// user routes
+app.get("/user", async (req, res) => {
+  try {
+    const users = await userCollection.find().toArray();
+    res.send(users);
+  } catch (error) {
+    console.error("Error occurred while getting users:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
+app.post("/user", async (req, res) => {
+  const userData = req.body;
+  const isUserExist = await userCollection.findOne({ email: userData.email });
+  if (isUserExist?._id) {
+    return res.send({
+      status: "success",
+    });
+  }
+  const result = await userCollection.insertOne(userData);
+  res.send(result);
+});
+
+app.delete("/user/delete/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await userCollection.deleteOne({ _id: new ObjectId(id) });
+    res.send(result);
+  } catch (error) {
+    console.error("Error occurred while deleting food:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// default route
 app.get("/", (req, res) => {
   res.send("organic food server is running");
 });
 
-app.listen(port, () => {
-  console.log(`Listening on port: ${port}`);
-});
+// Start the server after ensuring database connection
+async function startServer() {
+  await connectToMongoDB();
+  app.listen(port, () => {
+    console.log(`Listening on port: ${port}`);
+  });
+}
+
+startServer().catch(console.error);
