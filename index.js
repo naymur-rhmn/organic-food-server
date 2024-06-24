@@ -93,7 +93,7 @@ app.delete("/food/:id", async (req, res) => {
   }
 });
 // user routes
-app.get("/user", async (req, res) => {
+app.get("/users", async (req, res) => {
   try {
     const users = await userCollection.find().toArray();
     res.send(users);
